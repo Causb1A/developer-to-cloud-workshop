@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.env.windows": {
+        "PIPENV_VENV_IN_PROJECT": "1"
+    },
+    "python.pythonPath": "..\\.venv\\scripts\\python.exe"
+}
