@@ -114,6 +114,7 @@ def update_dynamo_db(interconnector_dict):
 
 
 def lambda_handler(event, context):
+    # Consider try and except with response
     interconnector_df = get_all_interconnector_flows(country_code_non_uk_dict)
     interconnector_df = convert_float_to_int(interconnector_df)
     interconnector_df = convert_df_datetime_to_strftime(interconnector_df)
