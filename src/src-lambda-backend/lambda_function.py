@@ -13,7 +13,7 @@ country_code_non_uk_dict = {
 }
 
 # Defining client
-client = EntsoePandasClient(api_key="YOUR-API-KEY")
+client = EntsoePandasClient(api_key="YOUR API KEY")
 
 # Dynamo db client
 boto_client = boto3.resource("dynamodb")
@@ -73,7 +73,10 @@ def convert_df_datetime_to_strftime(interconnector_flow_df):
         interconnector_flow (_type_): _description_
     """
     new_df = interconnector_flow_df.reset_index().rename(columns={"index": "datetime"})
-    new_df["datetime"] = new_df["datetime"].apply(lambda x: x.strftime("%Y%m%d%H%M%S"))
+    new_df["date"] = new_df["datetime"].apply(lambda x: int(x.strftime("%Y%m%d")))
+    new_df["datetime"] = new_df["datetime"].apply(
+        lambda x: int(x.strftime("%Y%m%d%H%M%S"))
+    )
     return new_df
 
 
@@ -96,7 +99,9 @@ def convert_df_to_json(interconnector_flow_df):
 
 
 def check_if_exists(input):
-    response = dynamo_db_table.get_item(Key={"datetime": input["datetime"]})
+    response = dynamo_db_table.get_item(
+        Key={"datetime": input["datetime"], "date": input["date"]}
+    )
     if "Item" in response:
         return True
     return False
@@ -121,3 +126,6 @@ def lambda_handler(event, context):
     interconnector_df.set_index("datetime", inplace=True)
     interconnector_dict = convert_df_to_json(interconnector_df)
     update_dynamo_db(interconnector_dict)
+
+
+lambda_handler("event", "context")
