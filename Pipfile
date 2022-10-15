@@ -7,6 +7,7 @@ name = "internal"
 pandas = "*"
 entsoe-py = "*"
 boto3 = "*"
+plotly = "*"
 
 [requires]
 python_version = "3.9"
