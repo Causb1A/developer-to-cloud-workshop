@@ -1,13 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Greetings!</title>
-   <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
-    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
-  </head>
-  <body>
+<html>
+<head>
+<link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+<script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<py-env>
+   - plotly
+   - pandas
+   - requests
+</py-env>
+<script type='text/javascript'>
+    function plot(graph, chart) {
+        var figure = JSON.parse(graph)
+        Plotly.newPlot(chart, figure, {});
+    }
+</script>
+</head>
+<body>
+<div class="row">
+    <div class="col-sm-6 p-2 shadow ml-4 mr-4 mb-4 bg-white rounded">
+        <div id="chart1"></div>
+    </div>
+</div>
   <py-script src="./main.py"></py-script>
   </body>
 </html>
