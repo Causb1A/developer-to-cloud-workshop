@@ -1,6 +1,7 @@
 import datetime
 import boto3
 from datetime import date
+import calendar
 
 
 # Dynamo db client
@@ -26,6 +27,19 @@ def get_date_keys():
     return date_keys
 
 
+def convert_to_epoch(interconnector_data):
+    """Converts date string to epoch time as javascript front end needs epoch"""
+    for i in range(len(interconnector_data["Responses"]["interconnector-data"])):
+        time_stamp = datetime.datetime.strptime(
+            str(interconnector_data["Responses"]["interconnector-data"][i]["datetime"]),
+            "%Y%m%d%H%M%S",
+        )
+        interconnector_data["Responses"]["interconnector-data"][i][
+            "datetime"
+        ] = calendar.timegm(time_stamp.timetuple())
+    return interconnector_data
+
+
 def get_todays_data_from_db():
     """
     Returns the data for today from the database
@@ -40,7 +54,11 @@ def get_todays_data_from_db():
             }
         }
     )
-
+    # Sort the data by datetime
+    data["Responses"]["interconnector-data"] = sorted(
+        data["Responses"]["interconnector-data"], key=lambda x: x["datetime"]
+    )
+    data = convert_to_epoch(data)
     return data
 
 

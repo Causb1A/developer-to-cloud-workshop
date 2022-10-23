@@ -1,4 +1,4 @@
-Copy-Item "./lambda_function.py" -Destination "./lambda"
+Copy-Item "./src/src-lambda-backend/lambda_function.py" -Destination "./lambda"
 
 Compress-Archive -Path ./lambda/* -DestinationPath ./lambda.zip
 

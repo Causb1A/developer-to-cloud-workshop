@@ -13,7 +13,7 @@ country_code_non_uk_dict = {
 }
 
 # Defining client
-client = EntsoePandasClient(api_key="7c70e97b-843e-4be4-b712-0b96520665f7")
+client = EntsoePandasClient(api_key="yapikey")
 
 # Dynamo db client
 boto_client = boto3.resource("dynamodb")
