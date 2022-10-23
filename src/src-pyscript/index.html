@@ -6,7 +6,6 @@
 <py-env>
    - plotly
    - pandas
-   - requests
 </py-env>
 <script type='text/javascript'>
     function plot(graph, chart) {
@@ -21,6 +20,14 @@
         <div id="chart1"></div>
     </div>
 </div>
-  <py-script src="./main.py"></py-script>
+  <py-script>
+    import asyncio
+    from pyodide.http import pyfetch
+
+    response = await pyfetch(url="https://p60frowj71.execute-api.eu-west-1.amazonaws.com/prd/interconnector", method="GET")
+    output = f"{await response.json().get('body')}"
+    print(output)
+
+  </py-script>
   </body>
 </html>
