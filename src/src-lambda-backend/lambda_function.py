@@ -12,8 +12,11 @@ country_code_non_uk_dict = {
     "Norway": "NO",
 }
 
+ssm_client = boto3.client("ssm")
+api_key = ssm_client.get_parameter(Name="entsoe-api-token", WithDecryption=False)
+
 # Defining client
-client = EntsoePandasClient(api_key="yapikey")
+client = EntsoePandasClient(api_key=api_key)
 
 # Dynamo db client
 boto_client = boto3.resource("dynamodb")
@@ -67,10 +70,10 @@ def get_all_interconnector_flows(country_code_non_uk_dict):
 
 
 def convert_df_datetime_to_strftime(interconnector_flow_df):
-    """_summary_
+    """Converts the datetime to string
 
     Args:
-        interconnector_flow (_type_): _description_
+        interconnector_flow_df (pd.dataframe): dataframe with interconnector flow
     """
     new_df = interconnector_flow_df.reset_index().rename(columns={"index": "datetime"})
     new_df["date"] = new_df["datetime"].apply(lambda x: int(x.strftime("%Y%m%d")))
@@ -81,24 +84,29 @@ def convert_df_datetime_to_strftime(interconnector_flow_df):
 
 
 def convert_float_to_int(interconnector_flow_df):
-    """_summary_
+    """Converts all floats to int
 
     Args:
-        interconnector_flow (_type_): _description_
+        interconnector_flow_df (pd.dataframe): _description_
     """
     return interconnector_flow_df.apply(lambda x: x.astype(int))
 
 
 def convert_df_to_json(interconnector_flow_df):
-    """_summary_
+    """Converts the df to json ready for input to dynamodb
 
     Args:
-        interconnector_flow (_type_): _description_
+        interconnector_flow (pd.Dataframe): dataframe with json ready for input to dynamodb
     """
     return json.loads(interconnector_flow_df.reset_index().to_json(orient="records"))
 
 
 def check_if_exists(input):
+    """Checks to see if the item exists in the dynamodb table already
+
+    Args:
+        input (dict): Dictionary of interconnectorflow_df
+    """
     response = dynamo_db_table.get_item(
         Key={"datetime": input["datetime"], "date": input["date"]}
     )
@@ -108,24 +116,37 @@ def check_if_exists(input):
 
 
 def put_into_dynamo_db(input):
+    """Puts the input into dynamodb table
+
+    Args:
+        input (dict): entry for db table
+    """
     if check_if_exists(input) == False:
         dynamo_db_table.put_item(Item=input)
 
 
 def update_dynamo_db(interconnector_dict):
+    """Function to update dynamo db
+
+    Args:
+        interconnector_dict (dict): full interconnector dictionary
+    """
     # Efficiency can be improved here by using get batch item so doesn't check for each item
     for entry in interconnector_dict:
         put_into_dynamo_db(entry)
 
 
 def lambda_handler(event, context):
-    # Consider try and except with response
-    interconnector_df = get_all_interconnector_flows(country_code_non_uk_dict)
-    interconnector_df = convert_float_to_int(interconnector_df)
-    interconnector_df = convert_df_datetime_to_strftime(interconnector_df)
-    interconnector_df.set_index("datetime", inplace=True)
-    interconnector_dict = convert_df_to_json(interconnector_df)
-    update_dynamo_db(interconnector_dict)
+    try:
+        interconnector_df = get_all_interconnector_flows(country_code_non_uk_dict)
+        interconnector_df = convert_float_to_int(interconnector_df)
+        interconnector_df = convert_df_datetime_to_strftime(interconnector_df)
+        interconnector_df.set_index("datetime", inplace=True)
+        interconnector_dict = convert_df_to_json(interconnector_df)
+        update_dynamo_db(interconnector_dict)
+        return {"statusCode": 200, "body": json.dumps("Everything works!")}
+    except:
+        return {"statusCode": 400, "body": json.dumps("Something has failed :( ")}
 
 
 lambda_handler("event", "context")
