@@ -16,7 +16,7 @@ ssm_client = boto3.client("ssm")
 api_key = ssm_client.get_parameter(Name="entsoe-api-token", WithDecryption=False)
 
 # Defining client
-client = EntsoePandasClient(api_key=api_key)
+client = EntsoePandasClient(api_key=api_key["Parameter"]["Value"])
 
 # Dynamo db client
 boto_client = boto3.resource("dynamodb")
@@ -146,7 +146,4 @@ def lambda_handler(event, context):
         update_dynamo_db(interconnector_dict)
         return {"statusCode": 200, "body": json.dumps("Everything works!")}
     except:
-        return {"statusCode": 400, "body": json.dumps("Something has failed :( ")}
-
-
-lambda_handler("event", "context")
+        raise Exception
