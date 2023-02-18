@@ -6,7 +6,8 @@ Parameters:
   OriginAccessControlName:
     {Type: String, Default: "hack-sussex-origin-access-control"}
   ApiToken:
-    {Type: String, Default: "default-token"}
+    {Type: String, Default: "defaulttoken"}
+
 
 Resources:
   OriginAccessControl:
@@ -66,6 +67,7 @@ Resources:
             - HEAD
             - OPTIONS
           TargetOriginId: S3Origin
+          MinTTL: 0
           ForwardedValues:
             QueryString: false
             Cookies:
@@ -81,7 +83,7 @@ Resources:
       Type: String
       Value: !Ref ApiToken
       Description: SSM Parameter for the entsoe API token for the workshop
-
+  
   InterconnectorDynamoDB:
     Type: AWS::DynamoDB::Table
     Properties: 
@@ -92,6 +94,7 @@ Resources:
         - 
           AttributeName: "date"
           AttributeType: "N"
+
       KeySchema: 
         - 
           AttributeName: "datetime"
@@ -126,7 +129,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:*
-                Resource: !Sub ${InterconnectorDynamoDB.Arn}
+                Resource: !GetAtt InterconnectorDynamoDB.Arn
         - PolicyName: SSMParameter
           PolicyDocument:
             Version: "2012-10-17"
@@ -135,13 +138,30 @@ Resources:
                 Effect: Allow
                 Action:
                   - ssm:DescribeParameters
-                  - ssm:GetParameters
-                Resource: !Sub ${APITokenParameter.Arn}
-      RoleName: interconnector-get-and-put-in-dynamodb
+                  - ssm:GetParameter
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/entsoe-api-token
+        - PolicyName: Logs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: LogCreateGroup
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+              - Sid: logStream
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:/aws/lambda/entsoe-to-dynamodb-interconnector:*
+      RoleName: interconnectorGetAndPutInDynamodb
       
   ProcessEntsoeToDynamoDB:
     Type: AWS::Lambda::Function
     Properties:
+      Architectures: 
+      - x86_64
       Code:
         ZipFile: |
           def lambda_handler(event, context):
@@ -151,17 +171,18 @@ Resources:
                 'body': 'Hello from Lambda!'
             }
       FunctionName: entsoe-to-dynamodb-interconnector
-      Handler: index.lambda_handler
-      Role: !Sub ${DynamoDbRolePut.Arn}
-      Runtime: python3.8
-      Timeout: 60
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt DynamoDbRolePut.Arn
+      Runtime: python3.9
+      Timeout: 120
       MemorySize: 200
-  
+
   ScheduledLambdaRule:
+  # Note that this schedule does not have permission to do this so you'll need to add it as a part of the workshop
     Type: AWS::Events::Rule
     Properties:
       Description: Scheduled Event
-      ScheduleExpression: rate(60 seconds)
+      ScheduleExpression: rate(1 minute)
       State: ENABLED
       Targets:
         - Arn: !GetAtt ProcessEntsoeToDynamoDB.Arn
@@ -210,6 +231,16 @@ Resources:
       FunctionName: get-dynamodb-interconnector
       Handler: index.lambda_handler
       Role: !Sub ${DynamoDbRoleRead.Arn}
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 60
       MemorySize: 200
+
+# cloudformation input a very unique s3 bucket name
+#1 input API token in SSM
+#2 Add schedule
+#3 Add zipped code
+#4 Test it out to see dynamo db
+#5 paste code in lambda 2
+#6 create API gateway make sure edge optimised
+#7 don't forget to enable CORS
+#8 Workshop finished. 

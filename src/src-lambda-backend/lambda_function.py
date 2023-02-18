@@ -25,11 +25,13 @@ dynamo_db_table = boto_client.Table("interconnector-data")
 
 def get_date_range():
     """Gets the date range of data 2 minutes before current"""
-    today = datetime.datetime.today()
-    tomorrow = datetime.datetime.today() + datetime.timedelta(days=1)
+    twenty_four_hours = datetime.datetime.today() - datetime.timedelta(days=1)
+    tomorrow = datetime.datetime.today() + datetime.timedelta(hours=2)
     return {
-        "start": pd.Timestamp(today.strftime("%Y-%m-%d"), tz="UTC"),
-        "end": pd.Timestamp(tomorrow.strftime("%Y-%m-%d"), tz="UTC"),
+        "start": pd.Timestamp(
+            twenty_four_hours.strftime("%Y-%m-%d %H:%M:%S"), tz="UTC"
+        ),
+        "end": pd.Timestamp(tomorrow.strftime("%Y-%m-%d %H:%M:%S"), tz="UTC"),
     }
 
 
